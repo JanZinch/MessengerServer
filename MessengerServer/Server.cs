@@ -50,7 +50,7 @@ public class Server
             
             Console.WriteLine("Raw line: " + rawLine);
 
-            Query query = Query.FromRawSource(rawLine);
+            Query query = Query.FromRawLine(rawLine);
             
             Console.WriteLine("Json: " + query.JsonDataString);
             
@@ -58,14 +58,17 @@ public class Server
         
             Console.WriteLine("Msg: " + postedMessage);
         
-            /*_chatMessages.Enqueue(postedMessage);
+            _chatMessages.Enqueue(postedMessage);
         
             StreamWriter writer = new StreamWriter(networkStream);
-            jsonMessageBuffer = JsonSerializer.Serialize(_chatMessages.ToArray());
-            await writer.WriteAsync(jsonMessageBuffer + "\n");
+            
+            string jsonMessageBuffer = JsonSerializer.Serialize(_chatMessages.ToArray());
+            Response response = new Response(jsonMessageBuffer);
+            
+            await writer.WriteAsync(response.ToString());
             await writer.FlushAsync();
         
-            Console.WriteLine("Write");*/
+            Console.WriteLine("Write");
         
             tcpClient.Close();
         }

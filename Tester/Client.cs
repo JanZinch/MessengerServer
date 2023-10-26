@@ -21,25 +21,26 @@ public class Client
             
             StreamWriter writer = new StreamWriter(networkStream);
             
-            string jsonMessageBuffer = JsonSerializer.Serialize(CreateTestMessage());
+            string rawLine = JsonSerializer.Serialize(CreateTestMessage());
             
-            Console.WriteLine("String: " + jsonMessageBuffer);
+            Console.WriteLine("String: " + rawLine);
 
-            Query query = new Query(QueryHeader.PostMessage, jsonMessageBuffer);
+            Query query = new Query(QueryHeader.PostMessage, rawLine);
             
             await writer.WriteAsync(query.ToString());
             await writer.FlushAsync();
             
             
-            /*Console.WriteLine("Wrote");
+            Console.WriteLine("Wrote");
         
             StreamReader reader = new StreamReader(networkStream);
             Console.WriteLine("GetStream");
             
-            jsonMessageBuffer = await reader.ReadLineAsync();
+            rawLine = await reader.ReadLineAsync();
             Console.WriteLine("Read");
             
-            List<Message> chat = JsonSerializer.Deserialize<List<Message>>(jsonMessageBuffer);
+            Response response = Response.FromRawLine(rawLine);
+            List<Message> chat = JsonSerializer.Deserialize<List<Message>>(response.JsonDataString);
 
             Console.WriteLine("Read");
         
@@ -48,7 +49,7 @@ public class Client
                 Console.WriteLine(message);
             }
             
-            tcpClient.Close();*/
+            tcpClient.Close();
 
 
         }

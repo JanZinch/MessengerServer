@@ -7,22 +7,16 @@ public class Query
     
     public QueryHeader Header { get; private set; }
     public string JsonDataString { get; private set; }
-
-    public Query(QueryHeader header, string jsonDataString)
-    {
-        Header = header;
-        JsonDataString = jsonDataString;
-    }
     
-    public static Query FromRawSource(string source)
+    public static Query FromRawLine(string rawLine)
     {
-        QueryHeader header = (QueryHeader) Convert.ToByte(source.Substring(0, HeaderLength));
+        QueryHeader header = (QueryHeader) Convert.ToByte(rawLine.Substring(0, HeaderLength));
         
-        string jsonDataString = source.Remove(0, HeaderLength).Replace(NewLine, string.Empty);
+        string jsonDataString = rawLine.Remove(0, HeaderLength).Replace(NewLine, string.Empty);
 
         return new Query(header, jsonDataString);
     }
-
+    
     private static string ToByteNotation(QueryHeader header)
     {
         const int byteStringLength = 3;
@@ -36,7 +30,13 @@ public class Query
 
         return result;
     }
-
+    
+    public Query(QueryHeader header, string jsonDataString)
+    {
+        Header = header;
+        JsonDataString = jsonDataString;
+    }
+    
     public override string ToString()
     {
         return ToByteNotation(Header) + JsonDataString + NewLine;
