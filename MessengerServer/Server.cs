@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using MessengerServer.Core;
 using MessengerServer.Core.Infrastructure;
+using MessengerServer.Core.Models;
 
 namespace MessengerServer;
 

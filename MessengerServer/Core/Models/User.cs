@@ -1,4 +1,4 @@
-﻿namespace MessengerServer.Core;
+﻿namespace MessengerServer.Core.Models;
 
 public class User
 {
