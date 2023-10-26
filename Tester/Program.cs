@@ -5,44 +5,33 @@ namespace Tester;
 
 public static class Program
 {
-    private const int MaxConnections = 100;
+    private static Client _client;
     
     public static async Task Main(string[] args)
     {
-        // слова для отправки для получения перевода
-        var words = new string[] { "red", "yellow", "blue", "green" };
- 
-        using TcpClient tcpClient = new TcpClient();
-        await tcpClient.ConnectAsync("127.0.0.1", 8888);
-        var stream = tcpClient.GetStream();
- 
-// буфер для входящих данных
-        var response = new List<byte>();
-        int bytesRead = 10; // для считывания байтов из потока
-        foreach (var word in words)
+        /*string s = "redroom\ntext\n0\n";
+
+        s = s.Replace("\n", string.Empty);
+        s = s.Remove(0, 3);*/
+        //s.Substring(0, 3);
+        
+        
+        //Console.WriteLine(s);
+
+        /*for (int i = 0; i < 256; i++)
         {
-            // считываем строку в массив байтов
-            // при отправке добавляем маркер завершения сообщения - \n
-            byte[] data = Encoding.UTF8.GetBytes(word + '\n');
-            // отправляем данные
-            await stream.WriteAsync(data);
- 
-            // считываем данные до конечного символа
-            while ((bytesRead = stream.ReadByte()) != '\n')
-            {
-                // добавляем в буфер
-                response.Add((byte)bytesRead);
-            }
-            var translation = Encoding.UTF8.GetString(response.ToArray());
-            Console.WriteLine($"Слово {word}: {translation}");
-            response.Clear();
-            // имитируем долговременную работу, чтобы одновременно несколько клиентов обрабатывались
-            await Task.Delay(2000);
+            Console.WriteLine(Convert.ToString(i, 2));
         }
- 
-// отправляем маркер завершения подключения - END
-        await stream.WriteAsync(Encoding.UTF8.GetBytes("END\n"));
-    } 
+        */
+        
+        //Console.WriteLine(Convert.ToByte("000001"));
+        
+
+        _client = new Client();
+        await _client.Run();
+    }
+
+    
     
     
 }
