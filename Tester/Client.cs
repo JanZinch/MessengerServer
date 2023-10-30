@@ -50,7 +50,7 @@ public class Client
                 Console.WriteLine(message);
             }
             
-            tcpClient.Close();
+            //tcpClient.Close();
 
 
         }
