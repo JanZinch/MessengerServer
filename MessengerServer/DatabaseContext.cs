@@ -4,16 +4,16 @@ using Microsoft.Data.SqlClient;
 
 namespace MessengerServer;
 
-public class DatabaseService : IDisposable
+public class DatabaseContext : IAsyncDisposable
 {
     private const string ConnectionString =
         "Server=localhost;Database=ChatAppDB;Trusted_Connection=True;TrustServerCertificate=True;";
-
-    private SqlConnection _connection;
     
     private const string FindUserTemplate = "SELECT [Nickname] FROM [User] WHERE [Nickname] = '{0}' AND [Password] = '{1}'";
     
-    public DatabaseService()
+    private SqlConnection _connection;
+    
+    public DatabaseContext()
     {
         _connection = new SqlConnection(ConnectionString);
     }
@@ -54,7 +54,7 @@ public class DatabaseService : IDisposable
         return false;
     }
     
-    public void Dispose()
+    /*public void Dispose()
     {
         if (_connection.State == ConnectionState.Open)
         {
@@ -64,5 +64,14 @@ public class DatabaseService : IDisposable
             });
         }
         
+    }*/
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_connection.State == ConnectionState.Open)
+        {
+            await _connection.CloseAsync();
+            Console.WriteLine("Disconnected from database");
+        }
     }
 }

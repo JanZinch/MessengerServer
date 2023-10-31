@@ -4,28 +4,42 @@ namespace MessengerServer;
 
 public static class Program
 {
-    private static DatabaseService _databaseService;
-    private static Server _server;
+    private const string ShutdownCommand = "shutdown";
+    private static AppServer _appServer;
     
     public static async Task Main(string[] args)
     {
+        _appServer = new AppServer();
+        _appServer.StartAsync();
+
+        while (true)
+        {
+            string command = Console.ReadLine();
+
+            if (command == ShutdownCommand)
+            {
+                break;
+            }
+        }
+        
+        await _appServer.DisposeAsync();
+        
         /*_server = new Server();
         await _server.Run();*/
 
-        using (_databaseService = new DatabaseService())
+        /*using (_databaseContext = new DatabaseContext())
         {
-            await _databaseService.ConnectToDatabase();
+            await _databaseContext.ConnectToDatabase();
             
-            Console.WriteLine("User exists: " + await _databaseService.IsUserExists(new User()
+            Console.WriteLine("User exists: " + await _databaseContext.IsUserExists(new User()
             {
                 Nickname = "Jan Zinch",
                 Password = "111111"
             }));
-        }
-        
-        Console.WriteLine("Программа завершила работу.");
-        Console.Read();
-    } 
-    
+        }*/
+
+        /*Console.WriteLine("Программа завершила работу.");
+        Console.Read();*/
+    }
     
 }
