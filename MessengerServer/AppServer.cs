@@ -63,21 +63,49 @@ public class AppServer : IAsyncDisposable
         try
         {
             NetworkStream networkStream = tcpClient.GetStream();
-            
             StreamReader reader = new StreamReader(networkStream);
-            string rawLine = await reader.ReadLineAsync();
-            //Console.WriteLine("Raw line: " + rawLine);
+            StreamWriter writer = new StreamWriter(networkStream);
 
-            Query query = Query.FromRawLine(rawLine);
-            //Console.WriteLine("Json: " + query.JsonDataString);  
+            string jsonMessageBuffer;
+            Response response;
+            bool _quitCommandReceived = false;
 
-            switch (query.Header)
+            while (!_quitCommandReceived)
             {
-                case QueryHeader.Login:
-                    break;
+                string rawLine = await reader.ReadLineAsync();
+                Query query = Query.FromRawLine(rawLine);
+
+                switch (query.Header)
+                {
+                    case QueryHeader.Login:
+
+                        User user = JsonSerializer.Deserialize<User>(query.JsonDataString);
+
+                        bool success = await _databaseContext.IsUserExists(user);
+
+                        jsonMessageBuffer = JsonSerializer.Serialize(success);
+                        response = new Response(jsonMessageBuffer);
+
+                        await writer.WriteAsync(response.ToString());
+                        await writer.FlushAsync();
+
+                        break;
+
+                    case QueryHeader.Quit:
+
+                        _quitCommandReceived = true;
+                        break;
+
+                    default:
+                        Console.WriteLine("Unknown command");
+                        break;
+                }
+
             }
-            
-            Message postedMessage = JsonSerializer.Deserialize<Message>(query.JsonDataString);
+
+
+
+            /*Message postedMessage = JsonSerializer.Deserialize<Message>(query.JsonDataString);
             //Console.WriteLine("Msg: " + postedMessage);   
         
             _chatMessages.Enqueue(postedMessage);
@@ -88,15 +116,19 @@ public class AppServer : IAsyncDisposable
             Response response = new Response(jsonMessageBuffer);
             
             await writer.WriteAsync(response.ToString());
-            await writer.FlushAsync();
-        
+            await writer.FlushAsync();*/
+
             //Console.WriteLine("Write");
-        
-            tcpClient.Close();
+
+            
         }
         catch (Exception ex)
         {
             Console.WriteLine(ex.Message + "\n" + ex.StackTrace);
+        }
+        finally
+        {
+            tcpClient.Close();
         }
         
     }
