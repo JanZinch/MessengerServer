@@ -31,8 +31,8 @@ public class AppServer : IAsyncDisposable
         try
         {
             _databaseContext = new DatabaseContext();
-            await _databaseContext.ConnectToDatabase();
-            _messages = new ConcurrentQueue<Message>(await _databaseContext.GetAllMessages());
+            await _databaseContext.ConnectToDatabaseAsync();
+            _messages = new ConcurrentQueue<Message>(await _databaseContext.GetAllMessagesAsync());
             
             _tcpListener = new TcpListener(IPAddress.Any, 8888);
             _tcpListener.Start();
@@ -69,7 +69,7 @@ public class AppServer : IAsyncDisposable
 
             string jsonMessageBuffer;
             Response response;
-            bool _quitCommandReceived = false;
+            bool _quitCommandReceived = false, success;
 
             while (!_quitCommandReceived)
             {
@@ -81,7 +81,7 @@ public class AppServer : IAsyncDisposable
                     case QueryHeader.Login:
 
                         User user = JsonSerializer.Deserialize<User>(query.JsonDataString);
-                        bool success = await _databaseContext.IsUserExists(user);
+                        success = await _databaseContext.IsUserExistsAsync(user);
 
                         jsonMessageBuffer = JsonSerializer.Serialize(success);
                         response = new Response(jsonMessageBuffer);
@@ -99,6 +99,21 @@ public class AppServer : IAsyncDisposable
                         await writer.WriteAsync(response.ToString());
                         await writer.FlushAsync();
 
+                        break;
+                    
+                    case QueryHeader.PostMessage:
+                        
+                        Message message = JsonSerializer.Deserialize<Message>(query.JsonDataString);
+
+                        success = await _databaseContext.AddMessageAsync(message);
+                        
+                        Console.WriteLine("Added?: " + success);
+                        
+                        jsonMessageBuffer = JsonSerializer.Serialize(success);
+                        response = new Response(jsonMessageBuffer);
+                        await writer.WriteAsync(response.ToString());
+                        await writer.FlushAsync();
+                        
                         break;
                         
                     case QueryHeader.Quit:

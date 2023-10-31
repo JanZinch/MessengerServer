@@ -12,6 +12,8 @@ public class DatabaseContext : IAsyncDisposable
     
     private const string FindUserTemplate = "SELECT [Nickname] FROM [User] WHERE [Nickname] = '{0}' AND [Password] = '{1}'";
     private const string GetAllMessagesExpression = "SELECT * FROM [Message]";
+
+    private const string AddMessageTemplate = "INSERT INTO [Message] VALUES ('{0}', NULL, '{1}', '{2}');";
     
     private SqlConnection _connection;
 
@@ -20,7 +22,7 @@ public class DatabaseContext : IAsyncDisposable
         _connection = new SqlConnection(ConnectionString);
     }
 
-    public async Task ConnectToDatabase()
+    public async Task ConnectToDatabaseAsync()
     {
         try
         {
@@ -34,7 +36,7 @@ public class DatabaseContext : IAsyncDisposable
         
     }
 
-    public async Task<bool> IsUserExists(User user)
+    public async Task<bool> IsUserExistsAsync(User user)
     {
         try
         {
@@ -56,7 +58,7 @@ public class DatabaseContext : IAsyncDisposable
         return false;
     }
     
-    public async Task<LinkedList<Message>> GetAllMessages()
+    public async Task<LinkedList<Message>> GetAllMessagesAsync()
     {
         try
         {
@@ -72,7 +74,7 @@ public class DatabaseContext : IAsyncDisposable
                     Message message = new Message()
                     {
                         SenderNickname = reader.GetString(0),
-                        ReceiverNickname = reader.GetString(1),
+                        ReceiverNickname = reader.GetStringSafe(1),
                         Text = reader.GetString(2),
                         PostDateTime = reader.GetDateTime(3)
                     };
@@ -89,6 +91,33 @@ public class DatabaseContext : IAsyncDisposable
         {
             Console.WriteLine(ex.Message);
             return null;
+        }
+    }
+
+    public async Task<bool> AddMessageAsync(Message message)
+    {
+        try
+        {
+            string addMessageExpression = string.Format(
+                AddMessageTemplate, message.SenderNickname, message.Text, message.PostDateTime);
+
+            Console.WriteLine("|" + addMessageExpression + "|");
+            
+            //SqlParameter receiverNicknameParam = new SqlParameter("@receiverNickname", message.ReceiverNickname);
+            
+            SqlCommand command = new SqlCommand(addMessageExpression, _connection);
+            //command.Parameters.Add(receiverNicknameParam);
+            
+            Console.WriteLine("|" + command.CommandText + "|");
+            
+            int affectedRows = await command.ExecuteNonQueryAsync();
+
+            return affectedRows > 0;
+        }
+        catch (SqlException ex)
+        {
+            Console.WriteLine(ex.Message);
+            return false;
         }
     }
 
