@@ -68,20 +68,9 @@ public class Client
     {
         return new Message()
         {
-            Sender = new User()
-            {
-                Nickname = "Nick",
-                Password = "111111"
-            },
-
-            Receiver = new User()
-            {
-                Nickname = "Mike",
-                Password = "000000"
-            },
-            
+            SenderNickname = "Nick",
+            ReceiverNickname = "Mike",
             Text = "Just a test message.",
-            
             PostDateTime = DateTime.UtcNow,
         };
         

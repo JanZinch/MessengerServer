@@ -18,7 +18,7 @@ public class AppServer : IAsyncDisposable
 
     private bool _isRunning;
     
-    private readonly ConcurrentQueue<Message> _chatMessages = new ConcurrentQueue<Message>();
+    private ConcurrentQueue<Message> _messages;
 
     private bool IsRunning
     {
@@ -32,7 +32,8 @@ public class AppServer : IAsyncDisposable
         {
             _databaseContext = new DatabaseContext();
             await _databaseContext.ConnectToDatabase();
-
+            _messages = new ConcurrentQueue<Message>(await _databaseContext.GetAllMessages());
+            
             _tcpListener = new TcpListener(IPAddress.Any, 8888);
             _tcpListener.Start();
 
@@ -80,7 +81,6 @@ public class AppServer : IAsyncDisposable
                     case QueryHeader.Login:
 
                         User user = JsonSerializer.Deserialize<User>(query.JsonDataString);
-
                         bool success = await _databaseContext.IsUserExists(user);
 
                         jsonMessageBuffer = JsonSerializer.Serialize(success);
@@ -91,8 +91,18 @@ public class AppServer : IAsyncDisposable
 
                         break;
 
-                    case QueryHeader.Quit:
+                    case QueryHeader.UpdateChat:
+                        
+                        jsonMessageBuffer = JsonSerializer.Serialize(_messages.ToArray());
+                        response = new Response(jsonMessageBuffer);
+                        
+                        await writer.WriteAsync(response.ToString());
+                        await writer.FlushAsync();
 
+                        break;
+                        
+                    case QueryHeader.Quit:
+                        Console.WriteLine("Quit");
                         _quitCommandReceived = true;
                         break;
 
