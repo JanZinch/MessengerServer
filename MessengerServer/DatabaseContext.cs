@@ -12,12 +12,12 @@ public class DatabaseContext : IAsyncDisposable
     
     private const string FindUserExpression = "SELECT [Nickname] FROM [User] WHERE [Nickname] = @Nickname AND [Password] = @Password";
     private const string GetAllMessagesExpression = "SELECT * FROM [Message]";
-
-    private const string AddMessageTemplate = "INSERT INTO [Message] VALUES ('{0}', NULL, '{1}', '{2}');";
+    
+    private const string PostMessageExpression = "INSERT INTO [Message] VALUES (@SenderNickname, @ReceiverNickname, @Text, @PostDateTime)";
     
     private SqlConnection _connection;
 
-    public DatabaseContext()
+    public DatabaseContext() 
     {
         _connection = new SqlConnection(ConnectionString);
     }
@@ -40,8 +40,6 @@ public class DatabaseContext : IAsyncDisposable
     {
         try
         {
-            //string findUserExpression = string.Format(FindUserExpression, user.Nickname, user.Password);
-            
             SqlCommand command = new SqlCommand(FindUserExpression, _connection);
             command.Parameters.Add(new SqlParameter("@Nickname", user.Nickname));
             command.Parameters.Add(new SqlParameter("@Password", user.Password));
@@ -97,22 +95,16 @@ public class DatabaseContext : IAsyncDisposable
         }
     }
 
-    public async Task<bool> AddMessageAsync(Message message)
+    public async Task<bool> PostMessageAsync(Message message)
     {
         try
         {
-            string addMessageExpression = string.Format(
-                AddMessageTemplate, message.SenderNickname, message.Text, message.PostDateTime);
+            SqlCommand command = new SqlCommand(PostMessageExpression, _connection);
+            command.Parameters.Add(new SqlParameter("@SenderNickname", message.SenderNickname));
+            command.Parameters.Add(new SqlParameter("@ReceiverNickname", ToNullableDbObject(message.ReceiverNickname)));
+            command.Parameters.Add(new SqlParameter("@Text", message.Text));
+            command.Parameters.Add(new SqlParameter("@PostDateTime", message.PostDateTime));
 
-            Console.WriteLine("|" + addMessageExpression + "|");
-            
-            //SqlParameter receiverNicknameParam = new SqlParameter("@receiverNickname", message.ReceiverNickname);
-            
-            SqlCommand command = new SqlCommand(addMessageExpression, _connection);
-            //command.Parameters.Add(receiverNicknameParam);
-            
-            Console.WriteLine("|" + command.CommandText + "|");
-            
             int affectedRows = await command.ExecuteNonQueryAsync();
 
             return affectedRows > 0;
@@ -131,5 +123,15 @@ public class DatabaseContext : IAsyncDisposable
             await _connection.CloseAsync();
             Console.WriteLine("Disconnected from database");
         }
+    }
+
+    private static object ToNullableDbObject<T>(T source) where T : class
+    {
+        if (source == null)
+        {
+            Console.WriteLine("NULL");
+        }
+
+        return source != null ? source : DBNull.Value;
     }
 }

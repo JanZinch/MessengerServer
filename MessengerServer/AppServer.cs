@@ -105,7 +105,7 @@ public class AppServer : IAsyncDisposable
                         
                         Message message = JsonSerializer.Deserialize<Message>(query.JsonDataString);
 
-                        success = await _databaseContext.AddMessageAsync(message);
+                        success = await _databaseContext.PostMessageAsync(message);
                         
                         Console.WriteLine("Added?: " + success);
                         
