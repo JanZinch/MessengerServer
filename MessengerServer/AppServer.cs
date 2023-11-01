@@ -104,11 +104,16 @@ public class AppServer : IAsyncDisposable
                     case QueryHeader.PostMessage:
                         
                         Message message = JsonSerializer.Deserialize<Message>(query.JsonDataString);
-
                         success = await _databaseContext.PostMessageAsync(message);
                         
                         Console.WriteLine("Added?: " + success);
-                        
+
+                        if (success)
+                        {
+                            _messages.Clear();
+                            _messages = new ConcurrentQueue<Message>(await _databaseContext.GetAllMessagesAsync());
+                        }
+
                         jsonMessageBuffer = JsonSerializer.Serialize(success);
                         response = new Response(jsonMessageBuffer);
                         await writer.WriteAsync(response.ToString());
