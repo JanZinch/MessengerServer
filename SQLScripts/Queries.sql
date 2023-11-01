@@ -1,3 +1,5 @@
+USE ChatAppDB
+
 CREATE TABLE [User] (
 	[Nickname] NVARCHAR(30) NOT NULL,
 	[Password] NVARCHAR(30) NOT NULL,
@@ -45,7 +47,8 @@ VALUES ('Jan Zinch', 'Amerigo', 'Hello Amerigo!', '20230624 11:36:20')
 INSERT INTO [Message]
 VALUES ('Amerigo', null, 'Hello World!', '20230624 11:39:20')
 
-INSERT INTO [Message] VALUES ('Jan Zinch', 'NULL', 'Input yours', '31.10.2023 18:11:38');
+INSERT INTO [Message] 
+VALUES ('Jan Zinch', 'NULL', 'Input yours', '31.10.2023 18:11:38');
 
 GO
 

@@ -10,7 +10,7 @@ public class DatabaseContext : IAsyncDisposable
     private const string ConnectionString =
         "Server=localhost;Database=ChatAppDB;Trusted_Connection=True;TrustServerCertificate=True;";
     
-    private const string FindUserTemplate = "SELECT [Nickname] FROM [User] WHERE [Nickname] = '{0}' AND [Password] = '{1}'";
+    private const string FindUserExpression = "SELECT [Nickname] FROM [User] WHERE [Nickname] = @Nickname AND [Password] = @Password";
     private const string GetAllMessagesExpression = "SELECT * FROM [Message]";
 
     private const string AddMessageTemplate = "INSERT INTO [Message] VALUES ('{0}', NULL, '{1}', '{2}');";
@@ -40,9 +40,12 @@ public class DatabaseContext : IAsyncDisposable
     {
         try
         {
-            string findUserExpression = string.Format(FindUserTemplate, user.Nickname, user.Password);
+            //string findUserExpression = string.Format(FindUserExpression, user.Nickname, user.Password);
             
-            SqlCommand command = new SqlCommand(findUserExpression, _connection);
+            SqlCommand command = new SqlCommand(FindUserExpression, _connection);
+            command.Parameters.Add(new SqlParameter("@Nickname", user.Nickname));
+            command.Parameters.Add(new SqlParameter("@Password", user.Password));
+            
             SqlDataReader reader = await command.ExecuteReaderAsync();
 
             bool result = reader.HasRows;
