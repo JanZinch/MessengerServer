@@ -16,14 +16,28 @@ public class AppServer : IAsyncDisposable
     private TcpListener _tcpListener;
     private DatabaseContext _databaseContext;
 
+    private readonly object _stateLocker = new object();
     private bool _isRunning;
     
     private ConcurrentQueue<Message> _messages;
 
     private bool IsRunning
     {
-        get => Volatile.Read(ref _isRunning);
-        set => Volatile.Write(ref _isRunning, value);
+        get
+        {
+            lock (_stateLocker)
+            {
+                return _isRunning;
+            }
+        }
+        
+        set
+        {
+            lock (_stateLocker)
+            {
+                _isRunning = value;
+            }
+        }
     }
     
     public async void StartAsync()
@@ -78,7 +92,7 @@ public class AppServer : IAsyncDisposable
 
                 switch (query.Header)
                 {
-                    case QueryHeader.Login:
+                    case QueryHeader.SignIn:
 
                         User user = JsonSerializer.Deserialize<User>(query.JsonDataString);
                         success = await _databaseContext.IsUserExistsAsync(user);
