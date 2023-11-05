@@ -85,6 +85,8 @@ public class DatabaseContext : IAsyncDisposable
             }
 
             await reader.CloseAsync();
+
+            _messages = new LinkedList<Message>(_messages.OrderBy(message => message.PostDateTime));
             
             return _messages;
         }
