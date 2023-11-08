@@ -11,6 +11,8 @@ public class DatabaseContext : IAsyncDisposable
         "Server=localhost;Database=ChatAppDB;Trusted_Connection=True;TrustServerCertificate=True;";
     
     private const string FindUserExpression = "SELECT [Nickname] FROM [User] WHERE [Nickname] = @Nickname AND [Password] = @Password";
+    private const string CreateUserExpression = "INSERT INTO [User] VALUES (@Nickname, @Password)";
+    
     private const string GetAllMessagesExpression = "SELECT * FROM [Message]";
     
     private const string PostMessageExpression = "INSERT INTO [Message] VALUES (@SenderNickname, @ReceiverNickname, @Text, @PostDateTime)";
@@ -50,6 +52,25 @@ public class DatabaseContext : IAsyncDisposable
             await reader.CloseAsync();
             
             return result;
+        }
+        catch (SqlException ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+
+        return false;
+    }
+    
+    public async Task<bool> CreateUserAsync(User user)
+    {
+        try
+        {
+            SqlCommand command = new SqlCommand(CreateUserExpression, _connection);
+            command.Parameters.Add(new SqlParameter("@Nickname", user.Nickname));
+            command.Parameters.Add(new SqlParameter("@Password", user.Password));
+            
+            int affectedRows = await command.ExecuteNonQueryAsync();
+            return affectedRows > 0;
         }
         catch (SqlException ex)
         {
@@ -108,7 +129,6 @@ public class DatabaseContext : IAsyncDisposable
             command.Parameters.Add(new SqlParameter("@PostDateTime", message.PostDateTime));
 
             int affectedRows = await command.ExecuteNonQueryAsync();
-
             return affectedRows > 0;
         }
         catch (SqlException ex)
@@ -129,11 +149,6 @@ public class DatabaseContext : IAsyncDisposable
 
     private static object ToNullableDbObject<T>(T source) where T : class
     {
-        if (source == null)
-        {
-            Console.WriteLine("NULL");
-        }
-
         return source != null ? source : DBNull.Value;
     }
 }

@@ -20,7 +20,7 @@ public class AppServer : IAsyncDisposable
     private bool _isRunning;
     
     private ConcurrentQueue<Message> _messages;
-
+    
     private bool IsRunning
     {
         get
@@ -96,6 +96,19 @@ public class AppServer : IAsyncDisposable
 
                         User user = JsonSerializer.Deserialize<User>(query.JsonDataString);
                         success = await _databaseContext.IsUserExistsAsync(user);
+
+                        jsonMessageBuffer = JsonSerializer.Serialize(success);
+                        response = new Response(jsonMessageBuffer);
+
+                        await writer.WriteAsync(response.ToString());
+                        await writer.FlushAsync();
+
+                        break;
+                    
+                    case QueryHeader.SignUp:
+
+                        User newUser = JsonSerializer.Deserialize<User>(query.JsonDataString);
+                        success = await _databaseContext.CreateUserAsync(newUser);
 
                         jsonMessageBuffer = JsonSerializer.Serialize(success);
                         response = new Response(jsonMessageBuffer);
