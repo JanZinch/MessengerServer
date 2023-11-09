@@ -1,25 +1,20 @@
-﻿using System.Collections.Concurrent;
-using System.Data;
+﻿using System.Data;
 using MessengerServer.Core.Models;
 using Microsoft.Data.SqlClient;
 
-namespace MessengerServer;
+namespace MessengerServer.Server;
 
 public class DatabaseContext : IAsyncDisposable
 {
-    private const string ConnectionString =
-        "Server=localhost;Database=ChatAppDB;Trusted_Connection=True;TrustServerCertificate=True;";
-    
+    private const string ConnectionString = "Server=localhost;Database=ChatAppDB;Trusted_Connection=True;TrustServerCertificate=True;";
     private const string FindUserExpression = "SELECT [Nickname] FROM [User] WHERE [Nickname] = @Nickname AND [Password] = @Password";
     private const string CreateUserExpression = "INSERT INTO [User] VALUES (@Nickname, @Password)";
-    
-    private const string GetAllMessagesExpression = "SELECT * FROM [Message]";
-    
+    private const string GetAllSortedMessagesExpression = "SELECT * FROM [Message] ORDER BY [PostDateTime]";
     private const string PostMessageExpression = "INSERT INTO [Message] VALUES (@SenderNickname, @ReceiverNickname, @Text, @PostDateTime)";
     
     private SqlConnection _connection;
 
-    public DatabaseContext() 
+    public DatabaseContext()
     {
         _connection = new SqlConnection(ConnectionString);
     }
@@ -84,10 +79,10 @@ public class DatabaseContext : IAsyncDisposable
     {
         try
         {
-            SqlCommand command = new SqlCommand(GetAllMessagesExpression, _connection);
+            SqlCommand command = new SqlCommand(GetAllSortedMessagesExpression, _connection);
             SqlDataReader reader = await command.ExecuteReaderAsync();
             
-            LinkedList<Message> _messages = new LinkedList<Message>();
+            LinkedList<Message> messages = new LinkedList<Message>();
             
             if (reader.HasRows)
             {
@@ -95,21 +90,18 @@ public class DatabaseContext : IAsyncDisposable
                 {
                     Message message = new Message()
                     {
-                        SenderNickname = reader.GetString(0),
-                        ReceiverNickname = reader.GetStringSafe(1),
-                        Text = reader.GetString(2),
-                        PostDateTime = reader.GetDateTime(3)
+                        SenderNickname = reader.GetString("SenderNickname"),
+                        ReceiverNickname = reader.GetStringSafe("ReceiverNickname"),
+                        Text = reader.GetString("Text"),
+                        PostDateTime = reader.GetDateTime("PostDateTime")
                     };
 
-                    _messages.AddLast(message);
+                    messages.AddLast(message);
                 }
             }
 
             await reader.CloseAsync();
-
-            _messages = new LinkedList<Message>(_messages.OrderBy(message => message.PostDateTime));
-            
-            return _messages;
+            return messages;
         }
         catch (SqlException ex)
         {

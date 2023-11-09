@@ -9,12 +9,8 @@ public static class Program
     
     public static async Task Main(string[] args)
     {
-        string str = null;
-        Console.WriteLine(str);
-
-
-        /*_client = new Client();
-        await _client.Run();*/
+        _client = new Client();
+        await _client.Run();
     }
 
     

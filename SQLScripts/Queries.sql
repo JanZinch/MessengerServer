@@ -60,6 +60,7 @@ VALUES ('Amerigo', null, 'Современная наука может рассчитывать движение Луны и п
 GO
 
 SELECT * FROM [Message]
+ORDER BY [PostDateTime]
 GO
 
 SELECT * FROM [Message]

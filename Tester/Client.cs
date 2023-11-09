@@ -1,7 +1,5 @@
 ﻿using System.Net.Sockets;
-using System.Text;
 using System.Text.Json;
-using MessengerServer.Core;
 using MessengerServer.Core.Infrastructure;
 using MessengerServer.Core.Models;
 
@@ -51,19 +49,13 @@ public class Client
             }
             
             //tcpClient.Close();
-
-
         }
         catch (Exception ex)
         {
             Console.WriteLine(ex.Message);
         }
-
-        
-        
     }
-
-
+    
     private Message CreateTestMessage()
     {
         return new Message()

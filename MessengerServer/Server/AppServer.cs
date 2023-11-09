@@ -1,18 +1,14 @@
 ﻿using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Text.Json;
-using MessengerServer.Core;
 using MessengerServer.Core.Infrastructure;
 using MessengerServer.Core.Models;
 
-namespace MessengerServer;
+namespace MessengerServer.Server;
 
 public class AppServer : IAsyncDisposable
 {
-    private const int MaxConnections = 100;
-
     private TcpListener _tcpListener;
     private DatabaseContext _databaseContext;
 
@@ -57,10 +53,7 @@ public class AppServer : IAsyncDisposable
             while (IsRunning)
             {
                 TcpClient tcpClient = await _tcpListener.AcceptTcpClientAsync();
-
                 Task.Run(async () => await HandleClientAsync(tcpClient));
-
-                //Task.Run(()=> ProcessClientAsync(tcpClient));
             }
         }
         catch (Exception ex)
@@ -159,24 +152,6 @@ public class AppServer : IAsyncDisposable
                 }
 
             }
-
-
-
-            /*Message postedMessage = JsonSerializer.Deserialize<Message>(query.JsonDataString);
-            //Console.WriteLine("Msg: " + postedMessage);   
-        
-            _chatMessages.Enqueue(postedMessage);
-        
-            StreamWriter writer = new StreamWriter(networkStream);
-            
-            string jsonMessageBuffer = JsonSerializer.Serialize(_chatMessages.ToArray());
-            Response response = new Response(jsonMessageBuffer);
-            
-            await writer.WriteAsync(response.ToString());
-            await writer.FlushAsync();*/
-
-            //Console.WriteLine("Write");
-
             
         }
         catch (Exception ex)
@@ -189,11 +164,6 @@ public class AppServer : IAsyncDisposable
         }
         
     }
-
-    /*public async void StopAsync()
-    {
-        await DisposeAsync();
-    }*/
     
     public async ValueTask DisposeAsync()
     {
