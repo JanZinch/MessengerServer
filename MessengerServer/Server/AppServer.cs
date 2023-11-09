@@ -53,7 +53,7 @@ public class AppServer : IAsyncDisposable
             while (IsRunning)
             {
                 TcpClient tcpClient = await _tcpListener.AcceptTcpClientAsync();
-                Task.Run(async () => await HandleClientAsync(tcpClient));
+                Task.Run(() => HandleClientAsync(tcpClient));
             }
         }
         catch (Exception ex)
@@ -66,84 +66,43 @@ public class AppServer : IAsyncDisposable
         }
     }
     
-    private async Task HandleClientAsync(TcpClient tcpClient)
+    private async void HandleClientAsync(TcpClient tcpClient)
     {
         try
         {
-            NetworkStream networkStream = tcpClient.GetStream();
-            StreamReader reader = new StreamReader(networkStream);
-            StreamWriter writer = new StreamWriter(networkStream);
-
-            string jsonMessageBuffer;
-            Response response;
-            bool _quitCommandReceived = false, success;
-
-            while (!_quitCommandReceived)
+            NetworkAdaptor networkAdaptor = new NetworkAdaptor(tcpClient.GetStream());
+            bool quitCommandReceived = false;
+            
+            while (!quitCommandReceived)
             {
-                string rawLine = await reader.ReadLineAsync();
-                Query query = Query.FromRawLine(rawLine);
-
+                Query query = await networkAdaptor.ReceiveQueryAsync();
+                Response response;
+                
                 switch (query.Header)
                 {
                     case QueryHeader.SignIn:
-
-                        User user = JsonSerializer.Deserialize<User>(query.JsonDataString);
-                        success = await _databaseContext.IsUserExistsAsync(user);
-
-                        jsonMessageBuffer = JsonSerializer.Serialize(success);
-                        response = new Response(jsonMessageBuffer);
-
-                        await writer.WriteAsync(response.ToString());
-                        await writer.FlushAsync();
-
+                        response = await SignIn(query.JsonDataString);
+                        await networkAdaptor.SendResponseAsync(response);
                         break;
                     
                     case QueryHeader.SignUp:
-
-                        User newUser = JsonSerializer.Deserialize<User>(query.JsonDataString);
-                        success = await _databaseContext.CreateUserAsync(newUser);
-
-                        jsonMessageBuffer = JsonSerializer.Serialize(success);
-                        response = new Response(jsonMessageBuffer);
-
-                        await writer.WriteAsync(response.ToString());
-                        await writer.FlushAsync();
-
+                        response = await SignUp(query.JsonDataString);
+                        await networkAdaptor.SendResponseAsync(response);
                         break;
 
                     case QueryHeader.UpdateChat:
-                        
-                        jsonMessageBuffer = JsonSerializer.Serialize(_messages.ToArray());
+                        string jsonMessageBuffer = JsonSerializer.Serialize(_messages.ToArray());
                         response = new Response(jsonMessageBuffer);
-                        
-                        await writer.WriteAsync(response.ToString());
-                        await writer.FlushAsync();
-
+                        await networkAdaptor.SendResponseAsync(response);
                         break;
                     
                     case QueryHeader.PostMessage:
-                        
-                        Message message = JsonSerializer.Deserialize<Message>(query.JsonDataString);
-                        success = await _databaseContext.PostMessageAsync(message);
-                        
-                        Console.WriteLine("Added?: " + success);
-
-                        if (success)
-                        {
-                            _messages.Clear();
-                            _messages = new ConcurrentQueue<Message>(await _databaseContext.GetAllMessagesAsync());
-                        }
-
-                        jsonMessageBuffer = JsonSerializer.Serialize(success);
-                        response = new Response(jsonMessageBuffer);
-                        await writer.WriteAsync(response.ToString());
-                        await writer.FlushAsync();
-                        
+                        response = await PostMessage(query.JsonDataString);
+                        await networkAdaptor.SendResponseAsync(response);
                         break;
                         
                     case QueryHeader.Quit:
-                        Console.WriteLine("Quit");
-                        _quitCommandReceived = true;
+                        quitCommandReceived = true;
                         break;
 
                     default:
@@ -164,7 +123,41 @@ public class AppServer : IAsyncDisposable
         }
         
     }
+
+    private async Task<Response> SignIn(string jsonDataString)
+    {
+        User user = JsonSerializer.Deserialize<User>(jsonDataString);
+        bool success = await _databaseContext.IsUserExistsAsync(user);
+
+        string jsonMessageBuffer = JsonSerializer.Serialize(success);
+        return new Response(jsonMessageBuffer);
+    }
     
+    private async Task<Response> SignUp(string jsonDataString)
+    {
+        User user = JsonSerializer.Deserialize<User>(jsonDataString);
+        bool success = await _databaseContext.CreateUserAsync(user);
+
+        string jsonMessageBuffer = JsonSerializer.Serialize(success);
+        return new Response(jsonMessageBuffer);
+    }
+    
+    private async Task<Response> PostMessage(string jsonDataString)
+    {
+        Message message = JsonSerializer.Deserialize<Message>(jsonDataString);
+        bool success = await _databaseContext.PostMessageAsync(message);
+                        
+        if (success)
+        {
+            _messages.Clear();
+            _messages = new ConcurrentQueue<Message>(await _databaseContext.GetAllMessagesAsync());
+        }
+
+        string jsonMessageBuffer = JsonSerializer.Serialize(success);
+        return new Response(jsonMessageBuffer);
+    }
+    
+
     public async ValueTask DisposeAsync()
     {
         IsRunning = false;
