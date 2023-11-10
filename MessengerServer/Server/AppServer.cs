@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using System.Text.Json;
 using MessengerServer.Core.Infrastructure;
 using MessengerServer.Core.Models;
@@ -122,6 +123,67 @@ public class AppServer : IAsyncDisposable
             tcpClient.Close();
         }
         
+    }
+
+    /*private async void HandleServicesAsync()
+    {
+        UdpClient udpClient = new UdpClient(5555);
+
+        while (IsRunning)
+        {
+            UdpReceiveResult receiveResult = await udpClient.ReceiveAsync();
+            Query query = Query.FromRawLine(Encoding.UTF8.GetString(receiveResult.Buffer));
+
+            if (query.Header == QueryHeader.UpdateChat)
+            {
+                string jsonMessageBuffer = JsonSerializer.Serialize(_messages.ToArray());
+                Response response = new Response(jsonMessageBuffer);
+                
+                byte[] binaryResponse = Encoding.UTF8.GetBytes(response.ToString());
+                await udpClient.SendAsync(binaryResponse, receiveResult.RemoteEndPoint);
+            }
+            else
+            {
+                Console.WriteLine("Unknown command");
+            }
+        }
+        
+        udpClient.Close();
+    }*/
+
+    private async void ServicesLoop()
+    {
+        UdpClient udpReceiver = new UdpClient(5555);
+
+        while (IsRunning)
+        {
+            UdpReceiveResult newResult = await udpReceiver.ReceiveAsync();
+            Task.Run(() => HandleServiceAsync(newResult));
+        }
+
+        udpReceiver.Close();
+    }
+
+    private async void HandleServiceAsync(UdpReceiveResult udpReceiveResult)
+    {
+        UdpClient udpSender = new UdpClient();
+
+        Query query = Query.FromRawLine(Encoding.UTF8.GetString(udpReceiveResult.Buffer));
+
+        if (query.Header == QueryHeader.UpdateChat)
+        {
+            string jsonMessageBuffer = JsonSerializer.Serialize(_messages.ToArray());
+            Response response = new Response(jsonMessageBuffer);
+                
+            byte[] binaryResponse = Encoding.UTF8.GetBytes(response.ToString());
+            await udpSender.SendAsync(binaryResponse, udpReceiveResult.RemoteEndPoint);
+        }
+        else
+        {
+            Console.WriteLine("Unknown command");
+        }
+        
+        udpSender.Close();
     }
 
     private async Task<Response> SignIn(string jsonDataString)
